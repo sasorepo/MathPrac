@@ -59,11 +59,7 @@ enum Competition: String, CaseIterable {
     case aime = "AIME"
     case mathcounts = "MathCounts"
     case mathKangaroo = "Math Kangaroo"
-    case school = "Upper School"
-    case grade3 = "3rd Grade"
-    case grade4 = "4th Grade"
-    case grade5 = "5th Grade"
-    case prealgebra = "Prealgebra"
+    case school = "School"
     
     var displayName: String { rawValue }
 }
@@ -86,31 +82,6 @@ enum SchoolTopic: String, CaseIterable {
     case precalc = "Precalc"
     case calculus = "Calculus"
     case statistics = "Statistics"
-    var displayName: String { rawValue }
-}
-
-enum ElementaryTopic: String, CaseIterable {
-    case numberSense = "Number Sense"
-    case additionSubtraction = "Addition & Subtraction"
-    case multiplicationDivision = "Multiplication & Division"
-    case fractions = "Fractions"
-    case decimals = "Decimals"
-    case measurement = "Measurement & Units"
-    case timeMoney = "Time & Money"
-    case geometryBasics = "Geometry Basics"
-    case wordProblems = "Word Problems"
-    var displayName: String { rawValue }
-}
-
-enum PrealgebraTopic: String, CaseIterable {
-    case integers = "Integers"
-    case expressionsEquations = "Expressions & Equations"
-    case ratiosProportions = "Ratios & Proportions"
-    case exponentsPowers = "Exponents & Powers"
-    case fractionsDecimalsPercents = "Fractions, Decimals & Percents"
-    case geometryBasics = "Geometry Basics"
-    case probability = "Probability"
-    case numberTheoryBasics = "Number Theory Basics"
     var displayName: String { rawValue }
 }
 

@@ -2,10 +2,10 @@ import Foundation
 
 class APIService {
     static let shared = APIService()
-    
+
     private let groqBaseURL = "https://api.groq.com/openai/v1"
     private let groqAPIKey: String
-    
+
     private init() {
         // Get API key from Info.plist or environment
         if let key = Bundle.main.infoDictionary?["GROQ_API_KEY"] as? String {
@@ -28,86 +28,43 @@ class APIService {
         urlRequest.setValue("Bearer \(groqAPIKey)", forHTTPHeaderField: "Authorization")
         urlRequest.timeoutInterval = 60
         
-        let isElementary = ["3rd Grade", "4th Grade", "5th Grade"].contains(request.competition)
-        let isNoVariables = ["3rd Grade", "4th Grade"].contains(request.competition)
-        let isPrealgebra = request.competition == "Prealgebra"
+        let difficultyGuide = """
+        Difficulty Scale (1-10):
+        - 1-2: Elementary level (e.g., "x + 2 = 3", basic arithmetic, simple word problems)
+        - 3-4: Middle school level (e.g., basic fractions, simple geometry, percentages)
+        - 5-6: Standard \(request.competition) competition level
+        - 7-8: Challenging \(request.competition) problems
+        - 9-10: Very difficult problems, near the hardest from \(request.competition)
+        """
         
-        let systemPrompt: String
-        let difficultyGuide: String
-        var formattingRequirements = """
-IMPORTANT FORMATTING REQUIREMENTS:
-1. Do NOT use LaTeX anywhere. Use plain text math only (ASCII). Do not use $ or $$ or backslash commands.
-2. The problem should be appropriate for \(request.competition)
-3. Include any necessary diagrams or figures as text descriptions if needed
-4. Make the problem challenging and interesting
-"""
-        
-        if isElementary {
-            systemPrompt = "You are an expert elementary math teacher. Generate age-appropriate, engaging problems for \(request.competition). Use clear, simple language and avoid advanced notation."
-            difficultyGuide = """
-            Difficulty Scale (1-10) for \(request.competition):
-            - 1-2: Basic facts and one-step problems (e.g., addition/subtraction within 20, simple word problems)
-            - 3-4: Multi-step addition/subtraction within 1000, basic multiplication/division facts, simple fractions and measurement
-            - 5-6: Multi-step word problems, multiplication/division within 100, area/perimeter, fraction comparison and simple operations
-            - 7-8: Challenging grade-level problems requiring reasoning across topics
-            - 9-10: Very challenging problems at the top end of \(request.competition) difficulty
-            """
-            formattingRequirements += """
-            5. Keep numbers within grade-appropriate ranges and contexts
-            6. Avoid algebra beyond simple unknowns in one-step equations
-            """
-            if isNoVariables {
-                formattingRequirements += """
-                7. Do not use variables or letters (e.g., x, y). Avoid unknowns; use concrete numbers only
-                """
-            }
-        } else if isPrealgebra {
-            systemPrompt = "You are an expert prealgebra coach. Generate problems within prealgebra scope (integers, ratios and proportions, expressions and equations, exponents and powers, fractions/decimals/percents, basic geometry, probability, number theory basics)."
-            difficultyGuide = """
-            Difficulty Scale (1-10) for Prealgebra:
-            - 1-2: Order of operations, integer arithmetic, simple one-step equations
-            - 3-4: Multi-step arithmetic with fractions/decimals/percents, ratios and unit rates
-            - 5-6: Proportions, expressions and equations, exponents/powers, basic geometry and probability
-            - 7-8: Multi-step reasoning and challenging prealgebra contest-style problems
-            - 9-10: Very challenging problems near the hardest prealgebra level (but no Algebra I factoring/quadratics)
-            """
-            formattingRequirements += """
-            5. Stay within prealgebra; avoid factoring quadratics, systems of linear equations methods, logarithms, trigonometry, or calculus
-            """
-        } else {
-            systemPrompt = "You are an expert math competition problem generator. Generate UNIQUE and DIVERSE problems that match the style and difficulty of real \(request.competition) competition problems."
-            difficultyGuide = """
-            Difficulty Scale (1-10):
-            - 1-2: Elementary level (e.g., "x + 2 = 3", basic arithmetic, simple word problems)
-            - 3-4: Middle school level (e.g., basic fractions, simple geometry, percentages)
-            - 5-6: Standard \(request.competition) competition level
-            - 7-8: Challenging \(request.competition) problems
-            - 9-10: Very difficult problems, near the hardest from \(request.competition)
-            """
-        }
+        let systemPrompt = "You are an expert math competition problem generator. Generate UNIQUE and DIVERSE problems that match the style and difficulty of real \(request.competition) competition problems."
         
         let topicsList = request.topics.joined(separator: ", ")
         let userPrompt = """
         Generate a single \(request.competition) math problem with the following specifications:
-
+        
         Competition: \(request.competition)
         Topics: \(topicsList)
         Difficulty: \(request.difficulty)/10
-
+        
         \(difficultyGuide)
-
-        \(formattingRequirements)
-
+        
+        IMPORTANT FORMATTING REQUIREMENTS:
+        1. Use LaTeX math notation wrapped in $ for inline math and $$ for display math
+        2. The problem should be appropriate for \(request.competition)
+        3. Include any necessary diagrams or figures as text descriptions if needed
+        4. Make the problem challenging and interesting
+        
         ANSWER FORMAT REQUIREMENTS:
         - Provide the answer in the simplest, most standard numerical form
         - For fractions: use "a/b" format (e.g., "3/4")
         - For radicals: use "sqrt(n)" format (e.g., "sqrt(2)")
         - For integers: just the number (e.g., "42")
         - Do NOT use LaTeX notation in the answer field
-        
+
         Respond in JSON format with exactly these fields:
         {
-          "problem": "The problem statement in plain text (no LaTeX)",
+          "problem": "The problem statement with LaTeX math in $ or $$ delimiters",
           "answer": "The answer in simple numerical form",
           "explanation": "A clear, step-by-step explanation"
         }
@@ -142,8 +99,12 @@ IMPORTANT FORMATTING REQUIREMENTS:
         guard let content = groqResponse.choices.first?.message.content else {
             throw APIServiceError.serverError("No content in response")
         }
-        
-        let problemResponse = try JSONDecoder().decode(ProblemResponse.self, from: content.data(using: .utf8)!)
+
+        guard let data = content.data(using: .utf8) else {
+            throw APIServiceError.serverError("Invalid UTF-8 encoding in response")
+        }
+
+        let problemResponse = try JSONDecoder().decode(ProblemResponse.self, from: data)
         return problemResponse
     }
     
@@ -222,8 +183,12 @@ IMPORTANT FORMATTING REQUIREMENTS:
         guard let content = groqResponse.choices.first?.message.content else {
             throw APIServiceError.serverError("No content in response")
         }
-        
-        let feedbackData = try JSONDecoder().decode(FeedbackResponseInternal.self, from: content.data(using: .utf8)!)
+
+        guard let data = content.data(using: .utf8) else {
+            throw APIServiceError.serverError("Invalid UTF-8 encoding in response")
+        }
+
+        let feedbackData = try JSONDecoder().decode(FeedbackResponseInternal.self, from: data)
         
         return FeedbackResponse(
             acknowledged: true,
@@ -239,7 +204,7 @@ enum APIServiceError: LocalizedError {
     case invalidResponse
     case httpError(Int)
     case serverError(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
@@ -247,10 +212,26 @@ enum APIServiceError: LocalizedError {
         case .invalidResponse:
             return "Invalid response from server."
         case .httpError(let code):
-            return "Server returned error code: \(code)"
+            switch code {
+            case 400:
+                return "Invalid request. Please try different settings."
+            case 401:
+                return "Authentication failed. Please check your API key configuration."
+            case 403:
+                return "Access denied. Your API key may not have permission."
+            case 429:
+                return "Too many requests. Please wait a moment and try again."
+            case 500...599:
+                return "Server error. Please try again in a few moments."
+            default:
+                return "Network error (\(code)). Please check your internet connection."
+            }
         case .serverError(let message):
+            // Make technical errors more user-friendly
+            if message.contains("UTF-8") {
+                return "Received invalid data from server. Please try again."
+            }
             return message
         }
     }
 }
-
