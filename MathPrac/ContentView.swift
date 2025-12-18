@@ -21,7 +21,8 @@ struct ContentView: View {
     @State private var currentProblem: ProblemResponse?
     @State private var userAnswer: String = ""
     @State private var feedback: FeedbackState?
-    @State private var streak: Int = 0
+    @AppStorage("userStreak") private var streak: Int = 0
+    @AppStorage("lastActivityDate") private var lastActivityDate: String = ""
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
     @State private var showSettings: Bool = true
@@ -32,8 +33,14 @@ struct ContentView: View {
     @State private var additionalComment: String = ""
     @State private var isSubmittingFeedback: Bool = false
     @State private var feedbackResponse: FeedbackResponse?
-    
+
     @State private var showCompetitionMenu: Bool = false
+    
+    @State private var problemCount: Int = 0
+
+    // Task management for cancellation
+    @State private var currentGenerateTask: Task<Void, Never>?
+    @State private var currentFeedbackTask: Task<Void, Never>?
     
     private var availableTopics: [AnyTopic] {
         if selectedCompetition == .school {
@@ -92,7 +99,39 @@ struct ContentView: View {
                     }
                 }
             }
+            .onAppear {
+                validateStreak()
+            }
+            .onDisappear {
+                // Cancel any running tasks when view disappears
+                currentGenerateTask?.cancel()
+                currentFeedbackTask?.cancel()
+            }
         }
+    }
+
+    /// Validates and resets streak if more than 1 day has passed since last activity
+    private func validateStreak() {
+        let formatter = ISO8601DateFormatter()
+
+        // If there's no last activity date, set it to now
+        if lastActivityDate.isEmpty {
+            lastActivityDate = formatter.string(from: Date())
+            return
+        }
+
+        // Check if more than 1 day has passed
+        if let lastDate = formatter.date(from: lastActivityDate) {
+            let calendar = Calendar.current
+            let daysSince = calendar.dateComponents([.day], from: lastDate, to: Date()).day ?? 0
+
+            if daysSince > 1 {
+                streak = 0 // Reset streak if more than 1 day has passed
+            }
+        }
+
+        // Update last activity date to now
+        lastActivityDate = formatter.string(from: Date())
     }
     
     private var headerView: some View {
@@ -146,6 +185,8 @@ struct ContentView: View {
                     ForEach(Competition.allCases, id: \.self) { comp in
                         Button(comp.displayName) {
                             selectedCompetition = comp
+                            // Clear selected topics to prevent invalid topic/competition combinations
+                            selectedTopics.removeAll()
                         }
                     }
                     Button("Cancel", role: .cancel) {}
@@ -489,7 +530,10 @@ struct ContentView: View {
     
     private func generateProblem() {
         guard !selectedTopics.isEmpty else { return }
-        
+
+        // Cancel any existing task
+        currentGenerateTask?.cancel()
+
         isLoading = true
         errorMessage = nil
         feedback = nil
@@ -500,21 +544,30 @@ struct ContentView: View {
         userCorrectAnswer = ""
         additionalComment = ""
         
+        problemCount += 1
+
         let request = ProblemRequest(
             competition: selectedCompetition.rawValue,
             topics: selectedTopics.map { $0.displayName },
             difficulty: Int(difficulty)
         )
-        
-        Task {
+
+        currentGenerateTask = Task {
             do {
                 let response = try await APIService.shared.generateProblem(request: request)
+
+                // Check if task was cancelled
+                guard !Task.isCancelled else { return }
+
                 await MainActor.run {
                     currentProblem = response
                     isLoading = false
                     showSettings = false
                 }
             } catch {
+                // Check if task was cancelled
+                guard !Task.isCancelled else { return }
+
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isLoading = false
@@ -525,9 +578,15 @@ struct ContentView: View {
     
     private func submitAnswer() {
         guard let problem = currentProblem else { return }
-        
+
+        // Validate user input before processing
+        guard validateUserInput(userAnswer) else {
+            errorMessage = "Invalid input. Please use only numbers, math symbols, and standard characters."
+            return
+        }
+
         let isCorrect = MathAnswerChecker.compare(userAnswer, correctAnswer: problem.answer)
-        
+
         if isCorrect {
             streak += 1
             feedback = .correct(explanation: problem.explanation)
@@ -536,10 +595,29 @@ struct ContentView: View {
             feedback = .incorrect(correctAnswer: problem.answer, explanation: problem.explanation)
         }
     }
+
+    /// Validates user input to prevent malicious or invalid data
+    /// - Parameter input: The user's answer string
+    /// - Returns: true if input is valid, false otherwise
+    private func validateUserInput(_ input: String) -> Bool {
+        // Maximum length check
+        let maxLength = 1000
+        guard input.count <= maxLength else { return false }
+
+        // Allow alphanumeric characters, basic math symbols, and whitespace
+        let allowedCharacters = CharacterSet.alphanumerics
+            .union(.whitespaces)
+            .union(CharacterSet(charactersIn: "+-*/().,√πθαβ"))
+
+        return input.rangeOfCharacter(from: allowedCharacters.inverted) == nil
+    }
     
     private func submitFeedback() {
         guard let problem = currentProblem else { return }
-        
+
+        // Cancel any existing feedback task
+        currentFeedbackTask?.cancel()
+
         let correctAnswer: String?
         switch feedback {
         case .incorrect(let answer, _):
@@ -549,9 +627,9 @@ struct ContentView: View {
         case .none:
             return
         }
-        
+
         isSubmittingFeedback = true
-        
+
         let request = FeedbackRequest(
             problem: problem.problem,
             aiAnswer: correctAnswer ?? problem.answer,
@@ -559,16 +637,23 @@ struct ContentView: View {
             feedbackType: selectedFeedbackType.rawValue,
             additionalComment: additionalComment.isEmpty ? nil : additionalComment
         )
-        
-        Task {
+
+        currentFeedbackTask = Task {
             do {
                 let response = try await APIService.shared.submitFeedback(request: request)
+
+                // Check if task was cancelled
+                guard !Task.isCancelled else { return }
+
                 await MainActor.run {
                     feedbackResponse = response
                     showFeedbackForm = false
                     isSubmittingFeedback = false
                 }
             } catch {
+                // Check if task was cancelled
+                guard !Task.isCancelled else { return }
+
                 await MainActor.run {
                     errorMessage = "Failed to submit feedback: \(error.localizedDescription)"
                     isSubmittingFeedback = false

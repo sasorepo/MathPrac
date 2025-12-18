@@ -30,10 +30,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		380E96FD2EDCD22600FC3E95 /* Exceptions for "MathPrac" folder in "MathPrac" target */ = {
+		389CCE3E2EF37ADF00ABDC37 /* Exceptions for "MathPrac" folder in "MathPrac" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				APIService.swift.orig,
+				APIService.swift.rej,
+				Assets.xcassets,
+				ContentView.swift.orig,
 				Info.plist,
+				Oops.rej,
+				Oops.rej.orig,
+				patchfile,
 			);
 			target = 380E96C82EDCCF2400FC3E95 /* MathPrac */;
 		};
@@ -43,7 +50,7 @@
 		380E96CB2EDCCF2400FC3E95 /* MathPrac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				380E96FD2EDCD22600FC3E95 /* Exceptions for "MathPrac" folder in "MathPrac" target */,
+				389CCE3E2EF37ADF00ABDC37 /* Exceptions for "MathPrac" folder in "MathPrac" target */,
 			);
 			path = MathPrac;
 			sourceTree = "<group>";
@@ -114,7 +121,7 @@
 			buildPhases = (
 				380E96C52EDCCF2400FC3E95 /* Sources */,
 				380E96C62EDCCF2400FC3E95 /* Frameworks */,
-				380E96C72EDCCF2400FC3E95 /* Resources */,
+				389CCE3D2EF37ADF00ABDC37 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -221,13 +228,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		380E96C72EDCCF2400FC3E95 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		380E96D42EDCCF2600FC3E95 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -236,6 +236,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		380E96DE2EDCCF2600FC3E95 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		389CCE3D2EF37ADF00ABDC37 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -407,10 +414,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 8PQR26VG3C;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MathPrac/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -422,7 +429,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = mathpioneers.MathPrac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -441,10 +448,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 8PQR26VG3C;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MathPrac/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -456,7 +463,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = mathpioneers.MathPrac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
