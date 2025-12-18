@@ -694,8 +694,6 @@ struct ContentView: View {
         result = result.replacingOccurrences(of: "}", with: ")")
         result = result.replacingOccurrences(of: "{", with: "(")
         result = result.replacingOccurrences(of: "\\", with: "")
-        result = result.replacingOccurrences(of: "\\text{rac}", with: "\\frac")
-        result = result.replacingOccurrences(of: "rac{", with: "\\frac{")
         return result
     }
 }

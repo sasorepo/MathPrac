@@ -47,6 +47,16 @@ class APIService {
         
         let randomPrompt = randomizers.randomElement() ?? ""
         
+        let bannedLaTeXPatterns = [
+            "rac(",
+            "rac{",
+            "\\text{rac}",
+            ")/(\\d)",
+            "\\div"  // Avoid using \div in fractions
+        ]
+
+        let bannedString = bannedLaTeXPatterns.joined(separator: ", ")
+        
         let systemPrompt = "You are an expert math competition problem generator. Generate UNIQUE and DIVERSE problems that match the style and difficulty of real \(request.competition) competition problems."
         
         let topicsList = request.topics.joined(separator: ", ")
@@ -72,7 +82,24 @@ class APIService {
         - DO NOT use common template problems like "Find the area of a triangle with vertices..."
         - VARY the context: use different names, settings, and scenarios
         - If using geometry, vary the shapes and configurations
-        - If using algebra, vary the equation types and structures     
+        - If using algebra, vary the equation types and structures
+
+        BANNED LATEX PATTERNS - NEVER USE THESE:
+           \(bannedString)
+           
+        ONLY USE CORRECT LATEX:
+        - Fractions: \\frac{}{}
+        - Roots: \\sqrt{}
+        - Always use curly braces {}
+
+        EXAMPLE OF CORRECT FORMATTING:
+        
+        Problem: "Find the value of x if \\frac{240}{x} = 40"
+        Answer: "6"
+        Explanation: "We solve \\frac{240}{x} = 40 \\Rightarrow 240 = 40x \\Rightarrow x = \\frac{240}{40} = 6"
+        
+        EXAMPLE OF INCORRECT FORMATTING (NEVER DO THIS):
+        "rac(240)/(x) = 40" or "\\text{rac}(240)/(x) = 40"
         
         ANSWER FORMAT REQUIREMENTS:
         - Provide the answer in the simplest, most standard numerical form
@@ -81,15 +108,13 @@ class APIService {
         - For integers: just the number (e.g., "42")
         - Do NOT use LaTeX notation in the answer field
         
-        CRITICAL LATEX REQUIREMENTS:
-        1. For fractions, use: \\frac{numerator}{denominator} (e.g., \\frac{240}{t})
-        2. NEVER use \\text{rac} or other incorrect commands
-        3. Test that your LaTeX would compile correctly
-        4. Use proper LaTeX commands:
-           - Fractions: \\frac{a}{b}
-           - Square roots: \\sqrt{x}
-           - Exponents: x^{2}
-           - Subscripts: x_{1}
+        BANNED LATEX PATTERNS - NEVER USE THESE IN ANSWER:
+           \(bannedString)
+        
+        ONLY USE CORRECT LATEX IN ANSWER:
+        - Fractions: \\frac{}{}
+        - Roots: \\sqrt{}
+        - Always use curly braces {}
         
         Respond in JSON format with exactly these fields:
         {
